@@ -2,7 +2,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace CoreBankingTest.APP.Common.Behaviours
+namespace CoreBanking.Application.Common.Behaviours
 {
     public class DomainEventBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
           where TRequest : IRequest<TResponse>
@@ -23,10 +23,14 @@ namespace CoreBankingTest.APP.Common.Behaviours
             CancellationToken cancellationToken)
         {
             _logger.LogInformation("Processing domain events for {RequestType}", typeof(TRequest).Name);
+
             var response = await next();
+
             //collect and persist domain events
             _logger.LogInformation("Handled {RequestType}", typeof(TRequest).Name);
+
             await _dispatcher.DispatchDomainEventsAsync(cancellationToken);
+
             return response;
         }
 

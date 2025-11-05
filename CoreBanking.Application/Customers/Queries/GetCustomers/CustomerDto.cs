@@ -8,8 +8,10 @@ namespace CoreBanking.Application.Customers.Queries.GetCustomers
         public string FirstName { get; init; } = string.Empty;
         public string LastName { get; init; } = string.Empty;
         public string Email { get; init; } = string.Empty;
-        public string Phone { get; init; } = string.Empty;
-        public DateTime DateRegistered { get; init; }
+        public string PhoneNumber { get; init; } = string.Empty;
+        public string Address { get; init; } = String.Empty;
+        public DateOnly DateOfBirth { get; init; }
+        public DateTime DateCreated { get; init; }
         public bool IsActive { get; init; }
     }
 }

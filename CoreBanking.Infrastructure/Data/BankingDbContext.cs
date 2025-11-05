@@ -26,6 +26,10 @@ namespace CoreBanking.Infrastructure.Data
 
             modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
 
+            modelBuilder.Ignore<DomainEvent>();
+            modelBuilder.Ignore<IDomainEvent>();
+
+
             // Customer configuration
             modelBuilder.Entity<Customer>(entity =>
             {
@@ -136,6 +140,8 @@ namespace CoreBanking.Infrastructure.Data
                 LastName = "Johnson",
                 Email = "alice.johnson@email.com",
                 PhoneNumber = "555-0101",
+                Address = "no 6 alakija",
+                DateOfBirth = DateOnly.Parse("2025-11-17"),
                 DateCreated = DateTime.UtcNow.AddDays(-30),
                 IsActive = true,
                 IsDeleted = false

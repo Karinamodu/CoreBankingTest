@@ -1,6 +1,8 @@
-﻿namespace CoreBanking.Core.Common
+﻿using MediatR;
+
+namespace CoreBanking.Core.Common
 {
-    public abstract record DomainEvent : IDomainEvent
+    public abstract record DomainEvent : IDomainEvent, INotification
     {
         public Guid EventId { get; } = Guid.NewGuid();
         public DateTime OccurredOn { get; } = DateTime.UtcNow;
