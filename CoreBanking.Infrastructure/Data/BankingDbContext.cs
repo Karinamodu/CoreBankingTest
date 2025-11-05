@@ -19,12 +19,16 @@ namespace CoreBanking.Infrastructure.Data
         public DbSet<Account> Accounts => Set<Account>();
         public DbSet<Transaction> Transactions => Set<Transaction>();
         public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+        public DbSet<DomainEvent> DomainEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
+
+            modelBuilder.Ignore<DomainEvent>();
+            modelBuilder.Ignore<IDomainEvent>();
 
             // Customer configuration
             modelBuilder.Entity<Customer>(entity =>
@@ -37,7 +41,9 @@ namespace CoreBanking.Infrastructure.Data
                 entity.Property(c => c.FirstName).IsRequired().HasMaxLength(100);
                 entity.Property(c => c.LastName).IsRequired().HasMaxLength(100);
                 entity.Property(c => c.Email).IsRequired().HasMaxLength(255);
-                entity.Property(c => c.PhoneNumber).HasMaxLength(20);
+                entity.Property(c => c.PhoneNumber).IsRequired().HasMaxLength(20);
+                entity.Property(c => c.Address).IsRequired().HasMaxLength(200);
+                entity.Property(c => c.DateOfBirth).IsRequired().HasMaxLength(10);
 
                 // Customer has many Accounts
                 entity.HasMany(c => c.Accounts)
@@ -136,6 +142,8 @@ namespace CoreBanking.Infrastructure.Data
                 LastName = "Johnson",
                 Email = "alice.johnson@email.com",
                 PhoneNumber = "555-0101",
+                Address = "no 6 alakija",
+                DateOfBirth = DateOnly.Parse("2025-11-17"),
                 DateCreated = DateTime.UtcNow.AddDays(-30),
                 IsActive = true,
                 IsDeleted = false

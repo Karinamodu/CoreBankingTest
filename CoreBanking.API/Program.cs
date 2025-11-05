@@ -2,6 +2,7 @@ using CoreBanking.API.Middleware;
 using CoreBanking.Application.Accounts.Commands.CreateAccount;
 using CoreBanking.Application.Common.Behaviors;
 using CoreBanking.Application.Common.Mappings;
+using CoreBanking.Application.Customers.Commands.CreateCustomer;
 using CoreBanking.Core.Interfaces;
 using CoreBanking.Infrastructure.Data;
 using CoreBanking.Infrastructure.Repositories;
@@ -29,6 +30,7 @@ namespace CoreBanking.API
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddValidatorsFromAssembly(typeof(CreateAccountCommandValidator).Assembly);
+            builder.Services.AddValidatorsFromAssembly(typeof(CreateCustomerCommandValidator).Assembly);
             builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
@@ -40,6 +42,7 @@ namespace CoreBanking.API
             {
                 // Note: Registering one command is enough per Layer—MediatR scans the entire Application assembly (all Commands & Queries).
                 cfg.RegisterServicesFromAssembly(typeof(CreateAccountCommand).Assembly);
+                cfg.RegisterServicesFromAssembly(typeof(CreateCustomerCommand).Assembly);
 
                 cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
                 cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));

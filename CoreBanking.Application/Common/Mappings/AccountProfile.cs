@@ -45,5 +45,7 @@ public class AccountProfile : Profile
                     src.AccountType == AccountType.Savings
                         ? $"{src.AccountNumber.Value} - Savings"
                         : $"{src.AccountNumber.Value} - Current"));
+
+        CreateMap<CreateAccountRequest, CreateAccountCommand>();
     }
 }

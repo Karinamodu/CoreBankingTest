@@ -38,7 +38,7 @@ public class CustomersController : ControllerBase
     [HttpGet("{customerId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<CustomerDetailsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<CustomerDetailsDto>>> GetCustomer(Guid customerId)
+    public async Task<ActionResult<ApiResponse<CustomerDto>>> GetCustomer(Guid customerId)
     {
         var query = new GetCustomerDetailsQuery { CustomerId = customerId };
         var result = await _mediator.Send(query);
@@ -46,7 +46,7 @@ public class CustomersController : ControllerBase
         if (!result.IsSuccess)
             return NotFound(ApiResponse.CreateFailure(result.Errors));
 
-        return Ok(ApiResponse<CustomerDetailsDto>.CreateSuccess(result.Data!));
+        return Ok(ApiResponse<CustomerDto>.CreateSuccess(result.Data!));
     }
 
     [HttpPost]

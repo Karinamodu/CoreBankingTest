@@ -2,4 +2,6 @@
 
 namespace CoreBanking.Application.Customers.Queries.GetCustomers;
 
-public record GetCustomersQuery : IQuery<List<CustomerDto>>;
+    public record GetCustomersQuery : IQuery<List<CustomerDto>>;   
+
+    

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CoreBanking.Infrastructure.Migrations
 {
     [DbContext(typeof(BankingDbContext))]
-    [Migration("20251031120413_InitialCreate")]
+    [Migration("20251104141327_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -77,7 +77,7 @@ namespace CoreBanking.Infrastructure.Migrations
                             AccountNumber = "1000000001",
                             AccountType = "Checking",
                             CustomerId = new Guid("a1b2c3d4-1234-5678-9abc-123456789abc"),
-                            DateOpened = new DateTime(2025, 10, 11, 12, 4, 12, 559, DateTimeKind.Utc).AddTicks(5545),
+                            DateOpened = new DateTime(2025, 10, 15, 14, 13, 26, 846, DateTimeKind.Utc).AddTicks(9662),
                             IsActive = true,
                             IsDeleted = false
                         });
@@ -131,7 +131,7 @@ namespace CoreBanking.Infrastructure.Migrations
                         new
                         {
                             CustomerId = new Guid("a1b2c3d4-1234-5678-9abc-123456789abc"),
-                            DateCreated = new DateTime(2025, 10, 1, 12, 4, 12, 557, DateTimeKind.Utc).AddTicks(7818),
+                            DateCreated = new DateTime(2025, 10, 5, 14, 13, 26, 845, DateTimeKind.Utc).AddTicks(4852),
                             Email = "alice.johnson@email.com",
                             FirstName = "Alice",
                             IsActive = true,
@@ -180,6 +180,41 @@ namespace CoreBanking.Infrastructure.Migrations
                     b.HasIndex("AccountId");
 
                     b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("CoreBanking.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("OccurredOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ProcessedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OutboxMessages", (string)null);
                 });
 
             modelBuilder.Entity("CoreBanking.Core.Entities.Account", b =>
