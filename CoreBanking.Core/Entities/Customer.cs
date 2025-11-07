@@ -1,5 +1,4 @@
 ﻿using CoreBanking.Core.Common;
-using CoreBanking.Core.Events;
 using CoreBanking.Core.ValueObjects;
 
 namespace CoreBanking.Core.Entities
@@ -12,12 +11,15 @@ namespace CoreBanking.Core.Entities
         public string Email { get; private set; }
         public string PhoneNumber { get; private set; }
         public string Address { get; private set; }
-        public DateOnly DateOfBirth { get; private set; }
+        public DateTime DateOfBirth { get; private set; }
+        public string BVN { get; private set; }
+        public int CreditScore { get; private set; }
         public DateTime DateCreated { get; private set; }
         public bool IsActive { get; private set; }
         public bool IsDeleted { get; private set; }
         public DateTime? DeletedAt { get; private set; }
         public string? DeletedBy { get; private set; }
+
 
 
         private readonly List<DomainEvent> _domainEvents = new();
@@ -30,52 +32,54 @@ namespace CoreBanking.Core.Entities
 
         private Customer() { } // EF Core needs this
 
-        private Customer(string firstName, string lastName, string email, string phoneNumber, string address, DateOnly dateOfBirth)
+        public Customer(string firstName, string lastName, string email, string phoneNumber, DateTime dateOfBirth, string bVN, int creditScore)
         {
             CustomerId = CustomerId.Create();
             FirstName = firstName ?? throw new ArgumentNullException(nameof(firstName));
             LastName = lastName ?? throw new ArgumentNullException(nameof(lastName));
             Email = email ?? throw new ArgumentNullException(nameof(email));
             PhoneNumber = phoneNumber ?? throw new ArgumentNullException(nameof(phoneNumber));
-            Address = address ?? throw new ArgumentNullException(nameof(address));
             DateOfBirth = dateOfBirth;
+            BVN = bVN;
+            CreditScore = creditScore;
             DateCreated = DateTime.UtcNow;
             IsActive = true;
         }
 
 
-        public static Customer Create(
-            string firstName,
-            string lastName,
-            string email,
-            string phoneNumber,
-            string address,
-            DateOnly dateOfBirth
-            )
-        {
-            var customer = new Customer(
-                firstName: firstName,
-                lastName: lastName,
-                email: email,
-                phoneNumber: phoneNumber,
-                address: address,
-                dateOfBirth: dateOfBirth
-                )
-            {
+        //public static Customer Create(
+        //    string firstName,
+        //    string lastName,
+        //    string email,
+        //    string phoneNumber,
+        //    string address,
+        //    DateOnly dateOfBirth
+        //    )
+        //{
+        //    var customer = new Customer(
+        //        firstName: firstName,
+        //        lastName: lastName,
+        //        email: email,
+        //        phoneNumber: phoneNumber,
+        //        address: address,
+        //        dateOfBirth: dateOfBirth
 
-            };
+        //        )
+        //    {
 
-            //add domain event
-            customer.AddDomainEvent(new CustomerCreatedEvent(
-                firstName: customer.FirstName,
-                lastName: customer.LastName,
-                email: customer.Email,
-                phoneNumber: customer.PhoneNumber,
-                address: customer.Address,
-                dateOfBirth: customer.DateOfBirth));
+        //    };
 
-            return customer;
-        }
+        //    //add domain event
+        //    customer.AddDomainEvent(new CustomerCreatedEvent(
+        //        firstName: customer.FirstName,
+        //        lastName: customer.LastName,
+        //        email: customer.Email,
+        //        phoneNumber: customer.PhoneNumber,
+        //        address: customer.Address,
+        //        dateOfBirth: customer.DateOfBirth));
+
+        //    return customer;
+        //}
 
         // Business methods
         public void UpdateContactInfo(string email, string phoneNumber)

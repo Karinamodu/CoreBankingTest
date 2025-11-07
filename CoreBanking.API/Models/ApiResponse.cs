@@ -23,4 +23,9 @@ public record ApiResponse<T> : ApiResponse
 
     public static new ApiResponse<T> CreateFailure(params string[] errors)
         => new() { Success = false, Errors = errors };
+
+    internal static object CreateSuccess(object value)
+    {
+        throw new NotImplementedException();
+    }
 }

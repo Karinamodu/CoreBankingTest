@@ -141,7 +141,9 @@ namespace CoreBanking.Infrastructure.Data
                 Email = "alice.johnson@email.com",
                 PhoneNumber = "555-0101",
                 Address = "no 6 alakija",
-                DateOfBirth = DateOnly.Parse("2025-11-17"),
+                DateOfBirth = DateTime.Parse("2025-11-17"),
+                BVN = "123456789",
+                CreditScore = 20,
                 DateCreated = DateTime.UtcNow.AddDays(-30),
                 IsActive = true,
                 IsDeleted = false
