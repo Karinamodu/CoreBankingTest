@@ -12,6 +12,7 @@ using CoreBanking.Application.Common.Behaviors;
 using CoreBanking.Application.Common.Behaviours;
 using CoreBanking.Application.Common.Interfaces;
 using CoreBanking.Application.Common.Mappings;
+using CoreBanking.Application.Common.Models;
 using CoreBanking.Application.External.HttpClients;
 using CoreBanking.Application.External.Interfaces;
 using CoreBanking.Core.Events;
@@ -19,6 +20,7 @@ using CoreBanking.Core.Interfaces;
 using CoreBanking.Infrastructure.Data;
 using CoreBanking.Infrastructure.External.Resilience;
 using CoreBanking.Infrastructure.Repositories;
+using CoreBanking.Infrastructure.ServiceBus;
 using CoreBanking.Infrastructure.Services;
 using FluentValidation;
 using MediatR;
@@ -40,6 +42,9 @@ namespace CoreBanking.API
 
             builder.Services.AddDbContext<BankingDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Add resilience options
+            builder.Services.Configure<ResilienceOptions>(builder.Configuration.GetSection("Resilience"));
 
             // Core dependencies
             builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -112,6 +117,24 @@ namespace CoreBanking.API
                             retryCount, timespan.TotalMilliseconds);
                     }));
 
+            // Add advanced Polly policies
+            builder.Services.AddSingleton<AdvancedPollyPolicies>();
+
+            // Add simulated external services
+            builder.Services.AddSingleton<ISimulatedCreditScoringService, SimulatedCreditScoringService>();
+
+            // Add Azure Service Bus (simulated for now - will configure properly in subscequent class)
+            //builder.Services.AddSingleton<IServiceBusSender>(provider =>
+            //{
+            //    var logger = provider.GetRequiredService<ILogger<ServiceBusSender>>();
+            //    // For today, we'll use a mock. Tomorrow we'll add real Azure Service Bus connection
+            //    return new MockServiceBusSender(logger);
+            //});
+
+            builder.Services.AddSingleton<IEventPublisher, ServiceBusEventPublisher>();
+            builder.Services.AddScoped<IDomainEventDispatcher, ServiceBusEventDispatcher>();
+
+
 
             // MediatR setup
             builder.Services.AddMediatR(cfg =>
@@ -156,7 +179,7 @@ namespace CoreBanking.API
                     o.UseHttps();
                     o.Protocols = HttpProtocols.Http2;
                 });
-            });
+            });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
             var app = builder.Build();
 

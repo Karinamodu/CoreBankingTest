@@ -1,4 +1,5 @@
 ﻿using CoreBanking.Application.Common.Interfaces;
+using CoreBanking.Core.Common;
 using CoreBanking.Core.Interfaces;
 using CoreBanking.Infrastructure.Data;
 using MediatR;
@@ -40,6 +41,16 @@ namespace CoreBanking.Infrastructure.Services
             }
 
             domainEntities.ForEach(entity => entity.Entity.ClearDomainEvents());
+        }
+
+        public Task DispatchAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DispatchAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }
