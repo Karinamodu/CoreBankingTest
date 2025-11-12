@@ -140,28 +140,28 @@ namespace CoreBanking.Infrastructure.Data
                 LastName = "Johnson",
                 Email = "alice.johnson@email.com",
                 PhoneNumber = "555-0101",
-                Address = "no 6 alakija",
-                DateOfBirth = DateTime.Parse("2025-11-17"),
-                BVN = "123456789",
-                CreditScore = 20,
-                DateCreated = DateTime.UtcNow.AddDays(-30),
+                BVN = "20000000009",
+                Address = "10 town planning way",
+                CreditScore = 40,
+                // Use static, fixed dates instead of DateTime.UtcNow.AddX
+                DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                DateCreated = new DateTime(2024, 10, 1, 0, 0, 0, DateTimeKind.Utc),
                 IsActive = true,
                 IsDeleted = false
-            }
-            );
+            });
 
             modelBuilder.Entity<Account>().HasData(new
             {
                 AccountId = AccountId.Create(Guid.Parse("c3d4e5f6-3456-7890-cde1-345678901cde")),
                 AccountNumber = AccountNumber.Create("1000000001"),
-                AccountType = AccountType.Checking, // EF handles enum conversion
+                AccountType = AccountType.Checking,
                 CustomerId = CustomerId.Create(Guid.Parse("a1b2c3d4-1234-5678-9abc-123456789abc")),
                 Currency = "NGN",
-                DateOpened = DateTime.UtcNow.AddDays(-20),
+                // Also use a static date for DateOpened
+                DateOpened = new DateTime(2024, 10, 10, 0, 0, 0, DateTimeKind.Utc),
                 IsActive = true,
                 IsDeleted = false
-            }
-            );
+            });
 
             // Then configure the owned types separately
             modelBuilder.Entity<Account>().OwnsOne(a => a.Balance).HasData(

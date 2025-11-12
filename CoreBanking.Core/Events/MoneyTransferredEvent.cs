@@ -1,10 +1,11 @@
 ﻿// CoreBanking.Core/Events/MoneyTransferredEvent.cs
 using CoreBanking.Core.Common;
 using CoreBanking.Core.ValueObjects;
+using MediatR;
 
 namespace CoreBanking.Core.Events;
 
-public record MoneyTransferredEvent : DomainEvent
+public record MoneyTransferredEvent : DomainEvent, INotification
 {
     public TransactionId TransactionId { get; }
     public AccountNumber SourceAccountNumber { get; }
@@ -12,14 +13,14 @@ public record MoneyTransferredEvent : DomainEvent
     public Money Amount { get; }
     public string Reference { get; }
     public DateTime TransferDate { get; }
+    public Guid EventId { get; } = Guid.NewGuid();
+    public string EventType { get; } = nameof(MoneyTransferredEvent);
+    public DateTime OccurredOn { get; } = DateTime.UtcNow;
+    public string TransactionType { get; } = "Transfer";
 
 
-    public MoneyTransferredEvent(
-        TransactionId transactionId,
-        AccountNumber sourceAccountNumber,
-        AccountNumber destinationAccountNumber,
-        Money amount,
-        string reference)
+    public MoneyTransferredEvent(TransactionId transactionId, AccountNumber sourceAccountNumber,
+        AccountNumber destinationAccountNumber, Money amount, string reference)
     {
         TransactionId = transactionId;
         SourceAccountNumber = sourceAccountNumber;
@@ -29,3 +30,5 @@ public record MoneyTransferredEvent : DomainEvent
         TransferDate = DateTime.UtcNow;
     }
 }
+
+
