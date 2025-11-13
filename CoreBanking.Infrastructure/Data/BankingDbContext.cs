@@ -159,8 +159,12 @@ namespace CoreBanking.Infrastructure.Data
                 Currency = "NGN",
                 // Also use a static date for DateOpened
                 DateOpened = new DateTime(2024, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                LastActivityDate = new DateTime(2024, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                Status = "Active",
                 IsActive = true,
-                IsDeleted = false
+                IsDeleted = false,
+                IsArchived = false,
+                IsInterestBearing = false,
             });
 
             // Then configure the owned types separately

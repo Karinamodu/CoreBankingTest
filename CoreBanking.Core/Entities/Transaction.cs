@@ -17,6 +17,10 @@ namespace CoreBanking.Core.Entities
         public DateTime? DeletedAt { get; private set; }
         public string? DeletedBy { get; private set; }
 
+        // Add this property for archiving
+        public bool IsArchived { get; private set; } = false;
+
+
 
         private Transaction() { } // for materializing EF Core
 
@@ -32,9 +36,29 @@ namespace CoreBanking.Core.Entities
             Reference = string.IsNullOrEmpty(reference) ? GenerateReference() : reference;
         }
 
+        public static Transaction CreateInterestCredit(AccountId accountId, decimal interestAmount, string description)
+        {
+            if (interestAmount <= 0)
+                throw new ArgumentException("Interest amount must be greater than zero.", nameof(interestAmount));
+
+            var amount = new Money(interestAmount);
+
+            return new Transaction(
+                accountId,
+                TransactionType.Interest,
+                amount,
+                description,
+                account: null!);
+        }
         private string GenerateReference()
         {
             return $"{Timestamp:yyyyMMddHHmmss}-{TransactionId.ToString().Substring(0, 8)}";
+        }
+
+        // Method for maintenance
+        public void MarkAsArchived()
+        {
+            IsArchived = true;
         }
     }
 }

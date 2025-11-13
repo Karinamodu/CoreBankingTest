@@ -1,3 +1,4 @@
+using CoreBanking.API.Extensions;
 using CoreBanking.API.gRPC.Mappings;
 using CoreBanking.API.gRPC.Services;
 using CoreBanking.API.Hubs;
@@ -7,6 +8,7 @@ using CoreBanking.API.Middleware;
 using CoreBanking.API.Services;
 using CoreBanking.Application.Accounts.Commands.CreateAccount;
 using CoreBanking.Application.Accounts.EventHandlers;
+using CoreBanking.Application.BackgroundJobs;
 using CoreBanking.Application.Common.Behaviors;
 using CoreBanking.Application.Common.Behaviours;
 using CoreBanking.Application.Common.Interfaces;
@@ -17,6 +19,7 @@ using CoreBanking.Application.External.Interfaces;
 using CoreBanking.Application.Transactions.EventHandlers.CoreBanking.Application.Transactions.EventHandlers;
 using CoreBanking.Core.Events;
 using CoreBanking.Core.Interfaces;
+using CoreBanking.Infrastructure.BackgroundJobs;
 using CoreBanking.Infrastructure.Data;
 using CoreBanking.Infrastructure.External.Resilience;
 using CoreBanking.Infrastructure.Repositories;
@@ -24,6 +27,8 @@ using CoreBanking.Infrastructure.ServiceBus;
 using CoreBanking.Infrastructure.ServiceBus.Handlers;
 using CoreBanking.Infrastructure.Services;
 using FluentValidation;
+using Hangfire;
+using Hangfire.Storage;
 using MediatR;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +36,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
 using Polly.Extensions.Http;
+using static CoreBanking.API.Extensions.HangfireServiceExtensions;
 
 namespace CoreBanking.API
 {
@@ -69,6 +75,29 @@ namespace CoreBanking.API
             builder.Services.AddSingleton<IResilientHttpClientService, ResilientHttpClientService>();
             builder.Services.AddScoped<IResilienceService, ResilienceService>();
             builder.Services.Configure<ResilienceOptions>(builder.Configuration.GetSection("Resilience"));
+
+            // Hangfire Configuration
+            builder.Services.Configure<HangfireConfiguration>(builder.Configuration.GetSection("Hangfire"));
+            builder.Services.AddHangfireServices(builder.Configuration);
+
+            builder.Services.AddSingleton<LogJobFilter>();
+
+            builder.Services.AddHangfire(config => config
+                .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection")));
+
+            builder.Services.AddHangfireServer();
+
+            // Background Job Services
+            builder.Services.AddScoped<IDailyStatementService, DailyStatementService>();
+            builder.Services.AddScoped<IInterestCalculationService, InterestCalculationService>();
+            builder.Services.AddScoped<IAccountMaintenanceService, AccountMaintenanceService>();
+            builder.Services.AddScoped<IFailedJobHandler, FailedJobHandler>();
+            builder.Services.AddScoped<IJobInitializationService, JobInitializationService>();
+            builder.Services.AddScoped<IJobMonitoringService, JobMonitoringService>();
+            builder.Services.AddScoped<IMonitoringApi>(provider =>
+            {
+                return JobStorage.Current.GetMonitoringApi();
+            });
 
             // =====================================================================
             // AZURE SERVICE BUS (MOCK-SAFE CONFIG)
@@ -170,7 +199,7 @@ namespace CoreBanking.API
                     sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     onRetry: (outcome, timespan, retryCount, context) =>
                     {
-                        var logger = context.GetLogger();
+                        var logger = CoreBanking.API.Extensions.PollyContextExtensions.GetLogger(context);
                         logger?.LogWarning("Retry {RetryCount} after {Delay}ms", retryCount, timespan.TotalMilliseconds);
                     }));
 
@@ -250,7 +279,7 @@ namespace CoreBanking.API
             // Ensure mock-safe Service Bus setup
             using (var scope = app.Services.CreateScope())
             {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                var alogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 var admin = scope.ServiceProvider.GetRequiredService<ServiceBusAdministration>();
 
                 try
@@ -259,8 +288,29 @@ namespace CoreBanking.API
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "[Startup] Skipping Service Bus setup (mock or offline).");
+                    alogger.LogWarning(ex, "[Startup] Skipping Service Bus setup (mock or offline).");
                 }
+            }
+
+            // Hangfire Global Filters
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            using (var scope = app.Services.CreateScope())
+            {
+                var filter = scope.ServiceProvider.GetRequiredService<LogJobFilter>();
+                GlobalJobFilters.Filters.Add(filter);
+
+                logger.LogInformation("LogJobFilter registered globally");
+            }
+
+            // Hangfire Dashboard (secured)
+            app.UseHangfireDashboardWithAuth();
+
+            // Initialize jobs on startup
+            using (var scope = app.Services.CreateScope())
+            {
+                var jobInitialization = scope.ServiceProvider.GetRequiredService<IJobInitializationService>();
+                await jobInitialization.InitializeRecurringJobsAsync();
+                await jobInitialization.RegisterOneTimeJobsAsync();
             }
 
             // =====================================================================

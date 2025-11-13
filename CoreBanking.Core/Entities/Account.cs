@@ -20,6 +20,12 @@ namespace CoreBanking.Core.Entities
         public DateTime? DeletedAt { get; private set; }
         public string? DeletedBy { get; private set; }
 
+        // Add these properties for maintenance operations
+        public DateTime LastActivityDate { get; private set; } = DateTime.UtcNow;
+        public string Status { get; private set; } = "Active"; // Active, Inactive, Closed, Suspended
+        public bool IsInterestBearing { get; private set; } = true;
+        public bool IsArchived { get; private set; } = false;
+
         // Domain events collection
         private readonly List<DomainEvent> _domainEvents = new();
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -300,6 +306,31 @@ namespace CoreBanking.Core.Entities
             Balance = newBalance;
         }
 
+        // Methods for maintenance
+        public void MarkAsClosed()
+        {
+            Status = "Closed";
+            LastActivityDate = DateTime.UtcNow;
+        }
+
+        public void MarkAsArchived()
+        {
+            IsArchived = true;
+        }
+
+        public void UpdateStatusBasedOnRules()
+        {
+            // Implement your business rules for status updates
+            if (LastActivityDate < DateTime.UtcNow.AddYears(-1) && Status == "Active")
+            {
+                Status = "Inactive";
+            }
+        }
+
+        public void UpdateLastActivityDate()
+        {
+            LastActivityDate = DateTime.UtcNow;
+        }
 
     }
 }

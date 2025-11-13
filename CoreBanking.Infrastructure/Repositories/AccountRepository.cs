@@ -1,9 +1,11 @@
 ﻿using CoreBanking.Core.Entities;
+using CoreBanking.Core.Enums;
 using CoreBanking.Core.Exceptions;
 using CoreBanking.Core.Interfaces;
 using CoreBanking.Core.ValueObjects;
 using CoreBanking.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Data;
 
 namespace CoreBanking.Infrastructure.Repositories
@@ -11,24 +13,28 @@ namespace CoreBanking.Infrastructure.Repositories
     public class AccountRepository : IAccountRepository
     {
         private readonly BankingDbContext _context;
+        private readonly ILogger<AccountRepository> _logger;
 
-        public AccountRepository(BankingDbContext context)
+        public AccountRepository(BankingDbContext context, ILogger<AccountRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        public async Task<Account?> GetByIdAsync(AccountId accountId)
+        //public IUnitOfWork UnitOfWork => _context;
+
+        public async Task<Account> GetByIdAsync(AccountId id, CancellationToken cancellationToken = default)
         {
             return await _context.Accounts
-                .Include(a => a.Customer) // ← Eager load Customer
-                .Include(a => a.Transactions)
-                .FirstOrDefaultAsync(a => a.AccountId == accountId);
+                .Include(a => a.Customer)
+                .FirstOrDefaultAsync(a => a.AccountId == id, cancellationToken);
         }
 
-        public async Task<List<Account>> GetAllAsync()
+
+        public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
         {
             return await _context.Accounts
-                .Include(a => a.Customer) 
+                .Include(a => a.Customer)
                 .Include(a => a.Transactions)
                 .ToListAsync();
         }
@@ -41,11 +47,11 @@ namespace CoreBanking.Infrastructure.Repositories
                 .FirstOrDefaultAsync(a => a.AccountNumber == accountNumber);
         }
 
-        public async Task<IEnumerable<Account>> GetByCustomerIdAsync(CustomerId customerId)
+        public async Task<IEnumerable<Account>> GetByCustomerIdAsync(CustomerId customerId, CancellationToken cancellationToken)
         {
             return await _context.Accounts
                 .Where(a => a.CustomerId == customerId)
-                .Include(a => a.Customer) 
+                .Include(a => a.Customer)
                 .Include(a => a.Transactions)
                 .ToListAsync();
         }
@@ -91,6 +97,91 @@ namespace CoreBanking.Infrastructure.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Account>> GetInactiveAccountsSinceAsync(DateTime sinceDate, CancellationToken cancellationToken = default)
+        {
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .Where(a => a.LastActivityDate < sinceDate &&
+                        a.Status == "Active" && // Only active accounts
+                        a.Balance.Amount == 0)  // Only zero balance accounts
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Account>> GetInterestBearingAccountsAsync(CancellationToken cancellationToken = default)
+        {
+            var interestBearingTypes = new[] { AccountType.Savings, AccountType.FixedDeposit };
+
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .Where(a => interestBearingTypes.Contains(a.AccountType) &&
+                        a.Status == "Active" &&
+                        a.IsInterestBearing)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Account>> GetActiveAccountsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .Where(a => a.Status == "Active")
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Account>> GetAccountsByStatusAsync(string status, CancellationToken cancellationToken = default)
+        {
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .Where(a => a.Status == status)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Account>> GetAccountsWithLowBalanceAsync(decimal minimumBalance, CancellationToken cancellationToken = default)
+        {
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .Where(a => a.Balance.Amount < minimumBalance &&
+                        a.Status == "Active")
+                .ToListAsync(cancellationToken);
+        }
+
+        // Other existing methods...
+        public async Task<Account> GetByAccountNumberAsync(AccountNumber accountNumber, CancellationToken cancellationToken = default)
+        {
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .FirstOrDefaultAsync(a => a.AccountNumber == accountNumber, cancellationToken);
+        }
+
+        public async Task<List<Account>> GetAccountsByCustomerIdAsync(CustomerId customerId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Accounts
+                .Include(a => a.Customer)
+                .Where(a => a.Customer.CustomerId == customerId)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task AddAsync(Account entity, CancellationToken cancellationToken = default)
+        {
+            await _context.Accounts.AddAsync(entity, cancellationToken);
+        }
+
+        public async Task UpdateAsync(Account entity, CancellationToken cancellationToken = default)
+        {
+            _context.Accounts.Update(entity);
+            await Task.CompletedTask;
+        }
+
+        public async Task DeleteAsync(Account entity, CancellationToken cancellationToken = default)
+        {
+            _context.Accounts.Remove(entity);
+            await Task.CompletedTask;
+        }
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }
